@@ -51,6 +51,7 @@ const Page = () => {
         students={students}
         onRemove={handleRemoveStudent}
         onEdit={handleEditStudent}
+        onClose={() => {}}
       />
     </div>
   );
