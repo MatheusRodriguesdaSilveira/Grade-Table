@@ -1,6 +1,6 @@
 import { Settings2Icon, Trash2Icon } from "lucide-react";
 import { Student } from "@/types/Students";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
   Dialog,
@@ -28,38 +28,93 @@ export const StudentsTable = ({
   onClose,
   onEdit,
 }: Props) => {
-  const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
-  const [editedName, setEditedName] = useState<string>("");
-  const [editedEmail, setEditedEmail] = useState<string>("");
-  const [editedAvatar, setEditedAvatar] = useState<File | null>(null);
+  const [editedStudent, setEditedStudent] = useState<Student | null>(null);
+  const [editedAvatarFile, setEditedAvatarFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    const storedStudent = localStorage.getItem("editedStudent");
+    if (storedStudent) {
+      setEditedStudent(JSON.parse(storedStudent));
+    }
+  }, []);
 
   const handleRemoveClick = (id: number) => {
     onRemove(id);
   };
 
-  const handleEditClick = (student: Student) => {
-    setEditingStudentId(student.id);
-    setEditedName(student.name);
-    setEditedEmail(student.email);
-    setEditedAvatar(null);
-  };
+  useEffect(() => {
+    // Verifica se há algum estudante em edição e limpa se encontrado
+    const storedStudent = localStorage.getItem("editedStudent");
+    if (storedStudent) {
+      localStorage.removeItem("editedStudent");
+    }
+  }, []);
 
   const handleSaveClick = () => {
-    if (editingStudentId !== null) {
-      const avatarUrl = editedAvatar ? URL.createObjectURL(editedAvatar) : ""; // Cria uma URL para o arquivo
-      onEdit(editingStudentId, editedName, editedEmail, avatarUrl);
-      setEditingStudentId(null);
+    if (editedStudent) {
+      const avatarUrl = editedAvatarFile
+        ? URL.createObjectURL(editedAvatarFile)
+        : editedStudent.avatar;
+
+      const reader = new FileReader();
+      if (editedAvatarFile) {
+        reader.onloadend = () => {
+          const base64data = reader.result as string;
+
+          const updatedStudent = { ...editedStudent, avatar: base64data };
+
+          // Salvar no localStorage
+          localStorage.setItem("editedStudent", JSON.stringify(updatedStudent));
+
+          onEdit(
+            updatedStudent.id,
+            updatedStudent.name,
+            updatedStudent.email,
+            base64data
+          );
+
+          // Limpa o localStorage após salvar as mudanças
+          localStorage.removeItem("editedStudent");
+
+          setEditedStudent(null);
+        };
+        reader.readAsDataURL(editedAvatarFile);
+      } else {
+        const updatedStudent = { ...editedStudent, avatar: avatarUrl };
+
+        // Salvar no localStorage
+        localStorage.setItem("editedStudent", JSON.stringify(updatedStudent));
+
+        onEdit(
+          updatedStudent.id,
+          updatedStudent.name,
+          updatedStudent.email,
+          avatarUrl
+        );
+
+        // Limpa o localStorage após salvar as mudanças
+        localStorage.removeItem("editedStudent");
+
+        setEditedStudent(null);
+      }
+    }
+  };
+
+  const handleEditClick = (student: Student) => {
+    setEditedStudent({ ...student });
+    setEditedAvatarFile(null); // Resetando o arquivo de avatar quando abrir o editor
+    localStorage.setItem("editedStudent", JSON.stringify({ ...student }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setEditedAvatarFile(file);
     }
   };
 
   const handleCancelClick = () => {
-    setEditingStudentId(null);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setEditedAvatar(e.target.files[0]);
-    }
+    setEditedStudent(null);
   };
 
   return (
@@ -129,10 +184,10 @@ export const StudentsTable = ({
 
               <td className="flex space-x-2">
                 <Dialog
-                  open={editingStudentId === item.id}
+                  open={editedStudent?.id === item.id}
                   onOpenChange={(open) => {
                     if (!open) {
-                      setEditingStudentId(null);
+                      setEditedStudent(null);
                     }
                   }}
                 >
@@ -151,8 +206,12 @@ export const StudentsTable = ({
                         </Label>
                         <Input
                           id="name"
-                          value={editedName}
-                          onChange={(e) => setEditedName(e.target.value)}
+                          value={editedStudent?.name || ""}
+                          onChange={(e) =>
+                            setEditedStudent((prev) =>
+                              prev ? { ...prev, name: e.target.value } : null
+                            )
+                          }
                           className="col-span-3"
                         />
                       </div>
@@ -162,17 +221,21 @@ export const StudentsTable = ({
                         </Label>
                         <Input
                           id="email"
-                          value={editedEmail}
-                          onChange={(e) => setEditedEmail(e.target.value)}
+                          value={editedStudent?.email || ""}
+                          onChange={(e) =>
+                            setEditedStudent((prev) =>
+                              prev ? { ...prev, email: e.target.value } : null
+                            )
+                          }
                           className="col-span-3"
                         />
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="avatar" className="text-right">
+                        <Label htmlFor="Icon" className="text-right">
                           Icon
                         </Label>
                         <Input
-                          id="avatar"
+                          id="file_input"
                           type="file"
                           onChange={handleFileChange}
                           className="col-span-3"

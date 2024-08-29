@@ -40,7 +40,7 @@ type Props = {
 
 export const StepInformations = ({ setStep, onAdd }: Props) => {
   const { informations, setInformations } = useCheckoutStore((state) => state);
-  const [editedAvatar, setEditedAvatar] = useState<File | null>(null);
+  const [editedAvatar, setEditedAvatar] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -50,9 +50,9 @@ export const StepInformations = ({ setStep, onAdd }: Props) => {
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setInformations({
       ...values,
-      avatar: editedAvatar ? URL.createObjectURL(editedAvatar) : "",
-      grade1: parseFloat(values.grade1).toString(), // Corrigido para manter como string
-      grade2: parseFloat(values.grade2).toString(), // Corrigido para manter como string
+      avatar: editedAvatar || "",
+      grade1: parseFloat(values.grade1).toString(),
+      grade2: parseFloat(values.grade2).toString(),
       gradeFinal: 0,
       active: false,
     });
@@ -62,9 +62,12 @@ export const StepInformations = ({ setStep, onAdd }: Props) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const avatarUrl = URL.createObjectURL(file);
-      setEditedAvatar(file);
-      setInformations({ ...informations, avatar: avatarUrl });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditedAvatar(reader.result as string); // Armazena a imagem em Base64
+        setInformations({ ...informations, avatar: reader.result as string });
+      };
+      reader.readAsDataURL(file);
     }
   };
 

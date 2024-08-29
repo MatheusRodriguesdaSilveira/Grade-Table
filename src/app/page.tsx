@@ -8,16 +8,36 @@ import { AddNewStudent } from "../components/addNewStudent/NewStudent";
 import { User } from "lucide-react";
 
 const Page = () => {
-  const [students, setStudents] = useState<Student[]>(initialStudents);
+  const [students, setStudents] = useState<Student[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
+
+  const saveStudentsToLocalStorage = (students: Student[]) => {
+    localStorage.setItem("students", JSON.stringify(students));
+  };
+
+  const loadStudentsFromLocalStorage = (): Student[] => {
+    const savedStudents = localStorage.getItem("students");
+    if (savedStudents) {
+      return JSON.parse(savedStudents);
+    }
+    return initialStudents;
+  };
 
   useEffect(() => {
     setIsHydrated(true);
+    const savedStudents = loadStudentsFromLocalStorage();
+    setStudents(savedStudents);
+
+    // Salvar initialStudents no localStorage caso esteja vazio
+    if (!localStorage.getItem("students")) {
+      saveStudentsToLocalStorage(initialStudents);
+    }
   }, []);
 
   const handleRemoveStudent = (id: number) => {
     const updatedStudents = students.filter((student) => student.id !== id);
     setStudents(updatedStudents);
+    saveStudentsToLocalStorage(updatedStudents);
   };
 
   const handleEditStudent = (
@@ -30,10 +50,13 @@ const Page = () => {
       student.id === id ? { ...student, name, email, avatar } : student
     );
     setStudents(updatedStudents);
+    saveStudentsToLocalStorage(updatedStudents);
   };
 
   const handleAddStudent = (newStudent: Student) => {
-    setStudents((prevStudents) => [...prevStudents, newStudent]);
+    const updatedStudents = [...students, newStudent];
+    setStudents(updatedStudents);
+    saveStudentsToLocalStorage(updatedStudents);
   };
 
   if (!isHydrated) return null;

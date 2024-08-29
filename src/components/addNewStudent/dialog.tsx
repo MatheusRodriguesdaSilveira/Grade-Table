@@ -41,9 +41,9 @@ export const CheckoutDialog = ({ open, onOpenChange, onAdd }: Props) => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {step === "user" && "Personal Data"}
-            {step === "informations" && "Delivery Information"}
-            {step === "finish" && "Finalize the Order"}
+            {step === "user" && "Name"}
+            {step === "informations" && "Personal Data"}
+            {step === "finish" && "Finalize"}
           </DialogTitle>
         </DialogHeader>
 
