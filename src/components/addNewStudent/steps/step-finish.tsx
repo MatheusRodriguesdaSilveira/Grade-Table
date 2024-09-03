@@ -27,7 +27,7 @@ export const StepFinish = ({ setStep, onAdd }: Props) => {
   const grade1 = parseFloat(informations.grade1);
   const grade2 = parseFloat(informations.grade2);
   const gradeFinal = ((grade1 + grade2) / 2).toFixed(1);
-  const isActive = parseFloat(gradeFinal) >= 6; // Defina seu critério para ativo
+  const isActive = parseFloat(gradeFinal) >= 6; // Define o critério para ativo
 
   const newStudent: Student = {
     id: Math.random(), // Substitua por uma lógica de geração de ID adequada
